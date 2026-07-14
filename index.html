@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zuvo — Visualiza y elige tu tranquilidad financiera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --paper:#F4F5F2; --ink:#16211E; --muted:#5B6560; --pine:#14483C;
+    --pine-soft:#E7EFE9; --gain:#1E8E5A; --loss:#C0433A; --line:#DDE1DB;
+    --card:#FFFFFF; --copper:#C98A3B;
+  }
+  html,body{background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .shell{max-width:1080px;margin:0 auto;padding:20px 20px 40px}
+
+  /* Top bar */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  .mark{font-size:30px;color:var(--pine);line-height:1}
+  .logo{background:#FFFFFF;color:var(--pine);font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:22px;letter-spacing:.2em;padding:9px 16px 9px 18px;border-radius:11px;border:1px solid #E3E6E1;box-shadow:0 1px 3px rgba(20,72,60,.08);line-height:1}
+  .name{font-family:'Fraunces',serif;font-size:24px;font-weight:600;line-height:1}
+  .tagline{font-size:12px;color:var(--muted)}
+  .tabs{display:flex;gap:4px;background:var(--pine-soft);padding:4px;border-radius:10px}
+  .tab{display:flex;align-items:center;gap:7px;border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:14px;font-weight:500;padding:8px 14px;border-radius:7px;cursor:pointer;transition:.15s}
+  .tab:hover{color:var(--pine)}
+  .tab.on{background:var(--card);color:var(--pine);box-shadow:0 1px 2px rgba(20,72,60,.08)}
+  .tab svg{width:16px;height:16px}
+
+  main{padding-top:22px;display:flex;flex-direction:column;gap:18px}
+  .hidden{display:none}
+
+  /* Hero */
+  .hero{display:grid;grid-template-columns:1fr 1fr;gap:20px;background:var(--pine);border-radius:16px;padding:22px 24px;color:#EAF2ED}
+  .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#9CBCB0;font-weight:600}
+  .networth{font-size:40px;font-weight:600;margin-top:6px;color:#fff}
+  .pnl{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:15px;font-weight:500;padding:5px 11px;border-radius:8px;background:rgba(255,255,255,.1)}
+  .pnl.up{color:#8FE3B4}.pnl.down{color:#F0A19A}
+  .pnl svg{width:16px;height:16px}
+  .pnl-pct{opacity:.85;font-size:13px}
+  .hero-chart{align-self:end;min-height:110px}
+
+  /* Grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card-title{font-family:'Fraunces',serif;font-size:17px;font-weight:500;margin-bottom:14px}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start}
+  .metric-label{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .metric-value{font-size:22px;font-weight:600}
+  .metric-value.up{color:var(--gain)}.metric-value.down{color:var(--loss)}
+
+  .alloc-body{display:flex;align-items:center;gap:12px}
+  .donut{flex:0 0 150px;display:flex;justify-content:center}
+  .legend{list-style:none;flex:1;display:flex;flex-direction:column;gap:9px}
+  .legend li{display:flex;align-items:center;gap:9px;font-size:13px}
+  .dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+  .legend-name{flex:1}
+  .legend-val{color:var(--muted);font-size:12px}
+
+  /* Tables */
+  .table-wrap{overflow-x:auto;margin:0 -4px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--paper)}
+  .r{text-align:right}
+  .strong{font-weight:600}
+  .up{color:var(--gain)}.down{color:var(--loss)}
+  .asset{display:flex;align-items:center;gap:11px}
+  .tickpill{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;white-space:nowrap}
+  .asset-name{font-weight:500}
+  .asset-type{font-size:11px;color:var(--muted)}
+  .icon-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);width:30px;height:30px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
+  .icon-btn:hover{color:var(--loss);border-color:var(--loss)}
+  .icon-btn svg{width:15px;height:15px}
+  .empty{text-align:center;color:var(--muted);padding:28px!important;font-size:13px}
+
+  /* Form */
+  .form{margin-top:16px;border-top:1px dashed var(--line);padding-top:16px}
+  .form-title{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--pine);margin-bottom:10px}
+  .form-title svg{width:15px;height:15px}
+  .form-row{display:flex;gap:8px;flex-wrap:wrap}
+  .in{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:13px;background:var(--paper);color:var(--ink);min-width:150px;flex:1}
+  .in-sm{min-width:96px;flex:0 1 110px}
+  .in:focus{outline:none;border-color:var(--pine);background:#fff}
+  .add{background:var(--pine);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .add:hover:not(:disabled){background:#0f3a30}
+  .add:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Comparador */
+  .comp-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .comp-title{font-family:'Fraunces',serif;font-size:22px;font-weight:500;margin-top:4px;max-width:520px;line-height:1.2}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);border:1px solid var(--line);padding:9px 13px;border-radius:9px;white-space:nowrap}
+  .toggle input{accent-color:var(--pine);width:16px;height:16px;cursor:pointer}
+  .catbar{display:flex;gap:6px;flex-wrap:wrap}
+  .cat{border:1px solid var(--line);background:var(--card);color:var(--muted);font-family:inherit;font-size:13.5px;font-weight:500;padding:8px 16px;border-radius:999px;cursor:pointer;transition:.15s}
+  .cat:hover{border-color:var(--pine);color:var(--pine)}
+  .cat.on{background:var(--pine);border-color:var(--pine);color:#fff}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--pine)}
+  th.sorted{color:var(--pine)}
+  td.best{color:var(--pine);font-weight:600}
+  .best-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gain);margin-left:6px;vertical-align:middle}
+  .tag{display:inline-block;background:var(--pine-soft);color:var(--pine);font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;white-space:nowrap}
+  .comp-note{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:12px}
+  .comp-note svg{width:13px;height:13px}
+
+  /* Footer */
+  .foot{display:flex;align-items:flex-start;gap:8px;margin-top:26px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.5}
+  .foot svg{flex:0 0 auto;margin-top:1px;width:13px;height:13px}
+
+  /* Banner informativo */
+  .banner{display:flex;align-items:center;gap:12px;background:var(--pine-soft);border:1px solid #CFE0D6;border-radius:12px;padding:12px 16px;margin:18px 0 0;font-size:13px;color:#274b40;line-height:1.5}
+  .banner b{font-weight:600}
+  .banner .x{margin-left:auto;border:none;background:transparent;color:var(--pine);cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;padding:4px 8px;border-radius:6px}
+  .banner .x:hover{background:#d7e6dc}
+
+  /* Cabecera de tarjeta con herramientas */
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .card-head .card-title{margin-bottom:0}
+  .tools{display:flex;gap:8px;flex-wrap:wrap}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--pine);font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;transition:.15s}
+  .btn-ghost:hover{border-color:var(--pine);background:var(--pine-soft)}
+  .btn-ghost svg{width:14px;height:14px}
+
+  /* Edición de posiciones */
+  .icon-btn.edit:hover{color:var(--pine);border-color:var(--pine)}
+  .btn-cancel{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:9px 16px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn-cancel:hover{border-color:var(--loss);color:var(--loss)}
+  .actions-cell{display:flex;gap:6px;justify-content:flex-end}
+
+  /* Meta del comparador */
+  .comp-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+  .comp-meta .badge{background:var(--pine-soft);color:var(--pine);font-weight:600;padding:2px 9px;border-radius:999px;font-size:11px}
+
+  /* Precios en vivo */
+  .live{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 11px;background:var(--card);white-space:nowrap}
+  .live .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:0 0 auto}
+  .live.on .dot{background:var(--gain);box-shadow:0 0 0 3px rgba(30,142,90,.18);animation:pulse 2s infinite}
+  .live.demo .dot{background:var(--copper)}
+  @keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+
+  /* Cuenta y acceso */
+  .mark{display:inline-flex;line-height:0}
+  .top-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .account{border:1px solid var(--line);background:var(--card);color:var(--pine);font-family:inherit;font-size:13.5px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;transition:.15s;white-space:nowrap}
+  .account:hover{border-color:var(--pine);background:var(--pine-soft)}
+  .overlay{position:fixed;inset:0;background:rgba(22,33,30,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay[hidden]{display:none}
+  .auth-card{background:var(--card);border-radius:16px;padding:26px;width:100%;max-width:360px;position:relative;box-shadow:0 20px 50px rgba(22,33,30,.25)}
+  .auth-close{position:absolute;top:12px;right:14px;border:none;background:transparent;font-size:24px;line-height:1;color:var(--muted);cursor:pointer}
+  .auth-close:hover{color:var(--ink)}
+  .auth-tabs{display:flex;gap:4px;background:var(--pine-soft);padding:4px;border-radius:10px;margin-bottom:14px}
+  .auth-tab{flex:1;border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:13.5px;font-weight:600;padding:8px;border-radius:7px;cursor:pointer}
+  .auth-tab.on{background:var(--card);color:var(--pine);box-shadow:0 1px 2px rgba(20,72,60,.08)}
+  .auth-sub{font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+  .auth-label{display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:12px}
+  .auth-in{width:100%;margin-top:5px;background:var(--paper)}
+  .auth-error{color:var(--loss);font-size:12.5px;min-height:18px;margin-bottom:6px}
+  .auth-submit{width:100%}
+
+  @media(max-width:720px){
+    .top-right{width:100%}
+    .hero{grid-template-columns:1fr}.hero-chart{margin-top:8px}
+    .grid{grid-template-columns:1fr}
+    .networth{font-size:32px}
+    .tabs{width:100%}.tab{flex:1;justify-content:center}
+    .alloc-body{flex-direction:column;align-items:stretch}.donut{flex:none}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand">
+      <span class="logo">ZUVO</span>
+      <span class="tagline">Visualiza y elige tu tranquilidad financiera</span>
+    </div>
+    <div class="top-right">
+    <nav class="tabs">
+      <button class="tab on" data-view="cartera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+        Cartera
+      </button>
+      <button class="tab" data-view="comparador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+        Comparador
+      </button>
+    </nav>
+      <button class="account" id="account-btn">Entrar</button>
+    </div>
+  </header>
+
+  <div class="overlay" id="auth-overlay" hidden>
+    <div class="auth-card">
+      <button class="auth-close" id="auth-close" aria-label="Cerrar">×</button>
+      <div class="auth-tabs">
+        <button class="auth-tab on" data-auth="login">Entrar</button>
+        <button class="auth-tab" data-auth="register">Crear cuenta</button>
+      </div>
+      <p class="auth-sub" id="auth-sub">Accede para guardar tu cartera en tu cuenta.</p>
+      <label class="auth-label">Email
+        <input class="in auth-in" id="auth-email" type="email" autocomplete="email" placeholder="tu@email.com" />
+      </label>
+      <label class="auth-label">Contraseña
+        <input class="in auth-in" id="auth-pass" type="password" autocomplete="current-password" placeholder="Mínimo 8 caracteres" />
+      </label>
+      <div class="auth-error" id="auth-error"></div>
+      <button class="add auth-submit" id="auth-submit">Entrar</button>
+    </div>
+  </div>
+
+  <div class="banner" id="info-banner">
+    <span><b>Zuvo es una herramienta informativa</b>, no asesoramiento financiero. Los datos de mercado y de productos bancarios son de ejemplo; verifica siempre las condiciones en la web oficial de cada entidad antes de contratar.</span>
+    <button class="x" id="banner-x">Entendido</button>
+  </div>
+
+  <!-- ===================== CARTERA ===================== -->
+  <main id="view-cartera">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Patrimonio total</div>
+        <div class="networth num" id="networth">—</div>
+        <div class="pnl" id="pnl"></div>
+      </div>
+      <div class="hero-chart" id="sparkline"></div>
+    </section>
+
+    <section class="grid">
+      <div class="card metrics" id="metrics"></div>
+      <div class="card">
+        <div class="card-title">Distribución</div>
+        <div class="alloc-body">
+          <div class="donut" id="donut"></div>
+          <ul class="legend" id="legend"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title">Posiciones</div>
+        <div class="tools">
+          <span class="live demo" id="live-status" title="Estado de los precios"><span class="dot"></span><span id="live-text">Modo demo</span></span>
+          <button class="btn-ghost" id="btn-refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+            Actualizar
+          </button>
+          <button class="btn-ghost" id="btn-export">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Exportar
+          </button>
+          <button class="btn-ghost" id="btn-import">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+            Importar
+          </button>
+          <input type="file" id="file-import" accept="application/json,.json" style="display:none" />
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Activo</th><th class="r">Cantidad</th><th class="r">Precio compra</th>
+              <th class="r">Precio actual</th><th class="r">Valor</th><th class="r">Rentab.</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="holdings-body"></tbody>
+        </table>
+      </div>
+      <div class="form">
+        <div class="form-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
+          <span id="form-title-text">Añadir posición</span>
+        </div>
+        <div class="form-row">
+          <input class="in" id="f-name" placeholder="Nombre (p. ej. Apple)" />
+          <input class="in in-sm" id="f-ticker" placeholder="Ticker" />
+          <select class="in in-sm" id="f-type"></select>
+          <input class="in in-sm num" id="f-qty" type="number" placeholder="Cantidad" />
+          <input class="in in-sm num" id="f-buy" type="number" placeholder="P. compra" />
+          <input class="in in-sm num" id="f-price" type="number" placeholder="P. actual" />
+          <button class="add" id="f-add">Añadir</button>
+          <button class="btn-cancel" id="f-cancel" style="display:none">Cancelar</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== COMPARADOR ===================== -->
+  <main id="view-comparador" class="hidden">
+    <section class="comp-head">
+      <div>
+        <div class="eyebrow">Comparador de productos bancarios</div>
+        <h2 class="comp-title">Encuentra el producto que mejor encaja contigo</h2>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="zero-toggle" />
+        <span id="zero-label">Sin comisiones</span>
+      </label>
+    </section>
+    <nav class="catbar" id="catbar"></nav>
+    <section class="card">
+      <div class="comp-meta">
+        <span class="badge">Última actualización: julio de 2026</span>
+        <span>Datos de ejemplo. Fuentes de referencia para la versión real: comparadores oficiales del Banco de España y webs de cada entidad.</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="comp-head"></thead>
+          <tbody id="comp-body"></tbody>
+        </table>
+      </div>
+      <div class="comp-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Pulsa una columna con valores para ordenar. El punto verde marca el mejor valor de cada columna.
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <span>Herramienta informativa, no asesoramiento financiero. Los precios de mercado y los productos bancarios son datos de ejemplo. Consulta la información oficial de cada entidad antes de contratar. · <a href="legal.html" style="color:var(--pine);font-weight:600">Aviso legal y privacidad</a></span>
+  </footer>
+</div>
+
+<script>
+/* ============================ Datos ============================ */
+const TYPES = ["Acciones","ETF","Cripto","Renta fija","Otros"];
+const TYPE_COLORS = {Acciones:"#14483C",ETF:"#2E7D6A",Cripto:"#C98A3B","Renta fija":"#7A8C86",Otros:"#B0BAB4"};
+
+const DEFAULT_HOLDINGS = [
+  {id:"h1",name:"Iberdrola",ticker:"IBE",type:"Acciones",qty:120,buyPrice:10.2,price:12.85},
+  {id:"h2",name:"Banco Santander",ticker:"SAN",type:"Acciones",qty:300,buyPrice:3.1,price:4.42},
+  {id:"h3",name:"iShares MSCI World",ticker:"IWDA",type:"ETF",qty:45,buyPrice:78.5,price:94.3},
+  {id:"h4",name:"Vanguard S&P 500",ticker:"VUSA",type:"ETF",qty:30,buyPrice:62,price:81.1},
+  {id:"h5",name:"Bitcoin",ticker:"BTC",type:"Cripto",qty:0.15,buyPrice:38000,price:58200},
+  {id:"h6",name:"Bonos del Estado",ticker:"ES-BON",type:"Renta fija",qty:5000,buyPrice:1,price:1.02},
+];
+
+const BANK_DATA = {
+  Cuentas:{zeroFeeKey:"comision",zeroFeeLabel:"Sin comisiones",
+    columns:[
+      {key:"producto",label:"Producto",type:"text"},
+      {key:"comision",label:"Comisión/mes",type:"money",better:"low"},
+      {key:"remuneracion",label:"Remuneración",type:"pct",better:"high"},
+      {key:"requisitos",label:"Requisitos",type:"text"},
+      {key:"tarjeta",label:"Tarjeta",type:"text"},
+      {key:"mejorPara",label:"Mejor para",type:"tag"}],
+    rows:[
+      {producto:"Cuenta Online",comision:0,remuneracion:2.0,requisitos:"Ninguno",tarjeta:"Débito gratuita",mejorPara:"Sin comisiones"},
+      {producto:"Cuenta Nómina",comision:0,remuneracion:0,requisitos:"Nómina domiciliada",tarjeta:"Débito + crédito",mejorPara:"Domiciliar nómina"},
+      {producto:"Cuenta Ahorro",comision:0,remuneracion:2.75,requisitos:"Saldo mínimo 0 €",tarjeta:"No incluye",mejorPara:"Ahorrar"},
+      {producto:"Cuenta Clásica",comision:4,remuneracion:0,requisitos:"Ninguno",tarjeta:"Débito gratuita",mejorPara:"Oficina física"}]},
+  Tarjetas:{zeroFeeKey:"cuota",zeroFeeLabel:"Sin cuota",
+    columns:[
+      {key:"producto",label:"Producto",type:"text"},
+      {key:"tipo",label:"Tipo",type:"text"},
+      {key:"cuota",label:"Cuota/año",type:"money",better:"low"},
+      {key:"tae",label:"TAE",type:"pct",better:"low"},
+      {key:"cashback",label:"Cashback",type:"pct",better:"high"},
+      {key:"extranjero",label:"Comisión extranjero",type:"pct",better:"low"},
+      {key:"mejorPara",label:"Mejor para",type:"tag"}],
+    rows:[
+      {producto:"Tarjeta Débito",tipo:"Débito",cuota:0,tae:null,cashback:0,extranjero:0,mejorPara:"Uso diario"},
+      {producto:"Tarjeta Crédito",tipo:"Crédito",cuota:0,tae:19.5,cashback:1,extranjero:0,mejorPara:"Compras aplazadas"},
+      {producto:"Tarjeta Premium",tipo:"Crédito",cuota:120,tae:16.9,cashback:2,extranjero:0,mejorPara:"Cashback alto"},
+      {producto:"Tarjeta Viaje",tipo:"Débito",cuota:36,tae:null,cashback:0.5,extranjero:0,mejorPara:"Viajar"}]},
+  Hipotecas:{zeroFeeKey:"apertura",zeroFeeLabel:"Sin comisión de apertura",
+    columns:[
+      {key:"producto",label:"Producto",type:"text"},
+      {key:"tipo",label:"Tipo",type:"text"},
+      {key:"tin",label:"TIN",type:"pct",better:"low"},
+      {key:"tae",label:"TAE",type:"pct",better:"low"},
+      {key:"plazo",label:"Plazo máx.",type:"text"},
+      {key:"apertura",label:"Comisión apertura",type:"pct",better:"low"},
+      {key:"mejorPara",label:"Mejor para",type:"tag"}],
+    rows:[
+      {producto:"Hipoteca Fija",tipo:"Fija",tin:2.9,tae:3.15,plazo:"30 años",apertura:0,mejorPara:"Estabilidad"},
+      {producto:"Hipoteca Variable",tipo:"Variable",tin:2.1,tae:3.4,plazo:"30 años",apertura:0,mejorPara:"Euríbor bajo"},
+      {producto:"Hipoteca Mixta",tipo:"Mixta",tin:2.5,tae:3.25,plazo:"30 años",apertura:0.25,mejorPara:"Equilibrio"},
+      {producto:"Hipoteca Joven",tipo:"Fija",tin:2.75,tae:3.05,plazo:"35 años",apertura:0,mejorPara:"Menores de 35"}]},
+  "Préstamos":{zeroFeeKey:"apertura",zeroFeeLabel:"Sin comisión de apertura",
+    columns:[
+      {key:"producto",label:"Producto",type:"text"},
+      {key:"tin",label:"TIN",type:"pct",better:"low"},
+      {key:"tae",label:"TAE",type:"pct",better:"low"},
+      {key:"importe",label:"Importe máx.",type:"money0",better:"high"},
+      {key:"plazo",label:"Plazo máx.",type:"text"},
+      {key:"apertura",label:"Comisión apertura",type:"pct",better:"low"},
+      {key:"mejorPara",label:"Mejor para",type:"tag"}],
+    rows:[
+      {producto:"Préstamo Personal",tin:6.95,tae:7.2,importe:60000,plazo:"8 años",apertura:0,mejorPara:"Uso general"},
+      {producto:"Préstamo Coche",tin:5.9,tae:6.1,importe:50000,plazo:"8 años",apertura:0,mejorPara:"Comprar coche"},
+      {producto:"Préstamo Reforma",tin:6.5,tae:6.75,importe:40000,plazo:"10 años",apertura:0.5,mejorPara:"Reformas"},
+      {producto:"Préstamo Rápido",tin:8.95,tae:9.5,importe:15000,plazo:"5 años",apertura:1,mejorPara:"Dinero urgente"}]},
+};
+
+/* ============================ Utilidades ============================ */
+const eur = (n,dec=2)=>new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:dec,minimumFractionDigits:dec}).format(n||0);
+const pctSigned = n=>`${n>=0?"+":""}${n.toFixed(2)} %`;
+const el = (tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
+function fmtCell(type,v){
+  if(type==="money")return v===0?"Gratis":eur(v);
+  if(type==="money0")return eur(v,0);
+  if(type==="pct")return v==null?"—":`${v.toFixed(2)} %`;
+  return v;
+}
+
+/* ============================ Persistencia ============================ */
+const KEY="zuvo:holdings";
+function loadLocalHoldings(){
+  try{const raw=localStorage.getItem(KEY);if(raw)return JSON.parse(raw);}catch(e){}
+  return DEFAULT_HOLDINGS.slice();
+}
+function saveHoldings(){
+  if(state.user){
+    // Guardado en el servidor (cuenta del usuario)
+    fetch("/api/portfolio",{method:"PUT",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({holdings:state.holdings})}).catch(()=>{});
+  }else{
+    try{localStorage.setItem(KEY,JSON.stringify(state.holdings));}catch(e){}
+  }
+}
+
+/* ============================ Estado ============================ */
+const state = {
+  view:"cartera",
+  user:null,
+  holdings: loadLocalHoldings(),
+  editingId:null,
+  comp:{cat:"Cuentas",sortKey:null,sortDir:"asc",zeroOnly:false},
+};
+
+/* ============================ Navegación ============================ */
+document.querySelectorAll(".tab").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    state.view=btn.dataset.view;
+    document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b===btn));
+    document.getElementById("view-cartera").classList.toggle("hidden",state.view!=="cartera");
+    document.getElementById("view-comparador").classList.toggle("hidden",state.view!=="comparador");
+  });
+});
+
+/* ============================ Cartera ============================ */
+function computeStats(){
+  let value=0,invested=0;const byType={};
+  state.holdings.forEach(h=>{
+    const v=h.qty*h.price,c=h.qty*h.buyPrice;
+    value+=v;invested+=c;byType[h.type]=(byType[h.type]||0)+v;
+  });
+  const pnl=value-invested;
+  return {value,invested,pnl,pnlPct:invested>0?(pnl/invested)*100:0,
+    alloc:Object.keys(byType).map(k=>({name:k,value:byType[k]})).sort((a,b)=>b.value-a.value)};
+}
+
+function svgDonut(alloc,total){
+  const r=54,c=2*Math.PI*r,size=150,cx=size/2,cy=size/2;
+  let off=0,segs="";
+  alloc.forEach(s=>{
+    const frac=total>0?s.value/total:0;
+    const len=frac*c;
+    segs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${TYPE_COLORS[s.name]||TYPE_COLORS.Otros}" stroke-width="18" stroke-dasharray="${len} ${c-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    off+=len;
+  });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${segs}
+    <text x="${cx}" y="${cy-2}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" font-weight="600" fill="#16211E">${eur(total,0)}</text>
+    <text x="${cx}" y="${cy+14}" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#5B6560">total</text></svg>`;
+}
+
+function svgSpark(total){
+  const months=["Ago","Sep","Oct","Nov","Dic","Ene","Feb","Mar","Abr","May","Jun","Jul"];
+  const start=total*0.72;
+  const vals=months.map((m,i)=>{const t=i/(months.length-1);return Math.max(0,start+(total-start)*t+Math.sin(i*1.7)*total*0.02);});
+  vals[vals.length-1]=total;
+  const W=100,H=100,pad=4;
+  const max=Math.max(...vals),min=Math.min(...vals),range=max-min||1;
+  const pts=vals.map((v,i)=>{const x=pad+(i/(vals.length-1))*(W-2*pad);const y=H-pad-((v-min)/range)*(H-2*pad-10);return [x,y];});
+  const line=pts.map((p,i)=>`${i?"L":"M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
+  const area=`${line} L${(W-pad).toFixed(1)} ${H-pad} L${pad} ${H-pad} Z`;
+  return `<svg width="100%" height="110" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <defs><linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8FE3B4" stop-opacity="0.5"/><stop offset="100%" stop-color="#8FE3B4" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#grad)"/>
+    <path d="${line}" fill="none" stroke="#8FE3B4" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+function renderCartera(){
+  const s=computeStats();
+  document.getElementById("networth").textContent=eur(s.value);
+
+  const pnlEl=document.getElementById("pnl");
+  pnlEl.className="pnl "+(s.pnl>=0?"up":"down");
+  const arrow=s.pnl>=0
+    ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>`
+    :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>`;
+  pnlEl.innerHTML=`${arrow}<span class="num">${eur(s.pnl)}</span><span class="num pnl-pct">${pctSigned(s.pnlPct)}</span>`;
+
+  document.getElementById("sparkline").innerHTML=svgSpark(s.value);
+
+  document.getElementById("metrics").innerHTML=[
+    ["Invertido",eur(s.invested),""],
+    ["Valor actual",eur(s.value),""],
+    ["Ganancia/pérdida",eur(s.pnl),s.pnl>=0?"up":"down"],
+    ["Posiciones",String(state.holdings.length),""],
+  ].map(([l,v,t])=>`<div><div class="metric-label">${l}</div><div class="metric-value num ${t}">${v}</div></div>`).join("");
+
+  document.getElementById("donut").innerHTML=svgDonut(s.alloc,s.value);
+  document.getElementById("legend").innerHTML=s.alloc.map(a=>
+    `<li><span class="dot" style="background:${TYPE_COLORS[a.name]||TYPE_COLORS.Otros}"></span>
+     <span class="legend-name">${a.name}</span>
+     <span class="num legend-val">${s.value>0?((a.value/s.value)*100).toFixed(1):"0.0"} %</span></li>`).join("");
+
+  const body=document.getElementById("holdings-body");
+  if(!state.holdings.length){body.innerHTML=`<tr><td colspan="7" class="empty">Aún no tienes posiciones. Añade la primera abajo.</td></tr>`;}
+  else{
+    body.innerHTML=state.holdings.map(h=>{
+      const v=h.qty*h.price,c=h.qty*h.buyPrice,rp=c>0?((v-c)/c)*100:0;
+      const col=TYPE_COLORS[h.type]||TYPE_COLORS.Otros;
+      return `<tr>
+        <td><div class="asset"><span class="tickpill" style="background:${col}1a;color:${col}">${h.ticker}</span>
+          <div><div class="asset-name">${h.name}</div><div class="asset-type">${h.type}</div></div></div></td>
+        <td class="r num">${h.qty}</td><td class="r num">${eur(h.buyPrice)}</td>
+        <td class="r num">${eur(h.price)}</td><td class="r num strong">${eur(v)}</td>
+        <td class="r num ${rp>=0?"up":"down"}">${pctSigned(rp)}</td>
+        <td class="r"><div class="actions-cell">
+          <button class="icon-btn edit" data-edit="${h.id}" aria-label="Editar ${h.name}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="icon-btn" data-del="${h.id}" aria-label="Eliminar ${h.name}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          </button>
+        </div></td></tr>`;
+    }).join("");
+    body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+      if(state.editingId===b.dataset.del)cancelEdit();
+      state.holdings=state.holdings.filter(h=>h.id!==b.dataset.del);saveHoldings();renderCartera();
+    }));
+    body.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click",()=>startEdit(b.dataset.edit)));
+  }
+}
+
+/* Formulario */
+const typeSel=document.getElementById("f-type");
+TYPES.forEach(t=>{const o=el("option");o.value=t;o.textContent=t;typeSel.appendChild(o);});
+function validForm(){
+  return document.getElementById("f-name").value.trim() &&
+    document.getElementById("f-ticker").value.trim() &&
+    Number(document.getElementById("f-qty").value)>0 &&
+    Number(document.getElementById("f-buy").value)>0 &&
+    Number(document.getElementById("f-price").value)>0;
+}
+function readForm(){return{
+  name:document.getElementById("f-name").value.trim(),
+  ticker:document.getElementById("f-ticker").value.trim().toUpperCase(),
+  type:document.getElementById("f-type").value,
+  qty:Number(document.getElementById("f-qty").value),
+  buyPrice:Number(document.getElementById("f-buy").value),
+  price:Number(document.getElementById("f-price").value),
+};}
+function resetForm(){
+  ["f-name","f-ticker","f-qty","f-buy","f-price"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f-type").value="Acciones";
+}
+function cancelEdit(){
+  state.editingId=null;
+  document.getElementById("form-title-text").textContent="Añadir posición";
+  document.getElementById("f-add").textContent="Añadir";
+  document.getElementById("f-cancel").style.display="none";
+  resetForm();
+}
+function startEdit(id){
+  const h=state.holdings.find(x=>x.id===id);if(!h)return;
+  state.editingId=id;
+  document.getElementById("f-name").value=h.name;
+  document.getElementById("f-ticker").value=h.ticker;
+  document.getElementById("f-type").value=h.type;
+  document.getElementById("f-qty").value=h.qty;
+  document.getElementById("f-buy").value=h.buyPrice;
+  document.getElementById("f-price").value=h.price;
+  document.getElementById("form-title-text").textContent="Editar posición";
+  document.getElementById("f-add").textContent="Guardar";
+  document.getElementById("f-cancel").style.display="inline-flex";
+  document.querySelector(".form").scrollIntoView({behavior:"smooth",block:"center"});
+  document.getElementById("f-name").focus();
+}
+document.getElementById("f-add").addEventListener("click",()=>{
+  if(!validForm())return;
+  const data=readForm();
+  if(state.editingId){
+    const i=state.holdings.findIndex(x=>x.id===state.editingId);
+    if(i>=0)state.holdings[i]={...state.holdings[i],...data};
+  }else{
+    state.holdings.push({id:"h"+Date.now(),...data});
+  }
+  saveHoldings();cancelEdit();renderCartera();
+});
+document.getElementById("f-cancel").addEventListener("click",cancelEdit);
+
+/* Exportar / Importar cartera */
+document.getElementById("btn-export").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(state.holdings,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="mi-cartera-zuvo.json";
+  document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
+});
+document.getElementById("btn-import").addEventListener("click",()=>document.getElementById("file-import").click());
+document.getElementById("file-import").addEventListener("change",e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!Array.isArray(data))throw new Error("formato");
+      state.holdings=data.map((h,i)=>({
+        id:h.id||("h"+Date.now()+i),
+        name:String(h.name||""),
+        ticker:String(h.ticker||"").toUpperCase(),
+        type:TYPES.includes(h.type)?h.type:"Otros",
+        qty:Number(h.qty)||0,
+        buyPrice:Number(h.buyPrice)||0,
+        price:Number(h.price)||0,
+      }));
+      saveHoldings();cancelEdit();renderCartera();
+    }catch(err){
+      alert("No se pudo importar. El archivo debe ser un JSON exportado desde Zuvo.");
+    }
+    e.target.value="";
+  };
+  reader.readAsText(file);
+});
+
+/* Banner informativo */
+const banner=document.getElementById("info-banner");
+try{if(localStorage.getItem("zuvo:banner")==="off")banner.style.display="none";}catch(e){}
+document.getElementById("banner-x").addEventListener("click",()=>{
+  banner.style.display="none";
+  try{localStorage.setItem("zuvo:banner","off");}catch(e){}
+});
+
+/* ============================ Comparador ============================ */
+const catbar=document.getElementById("catbar");
+Object.keys(BANK_DATA).forEach(c=>{
+  const b=el("button","cat"+(c===state.comp.cat?" on":""),c);
+  b.addEventListener("click",()=>{
+    state.comp.cat=c;state.comp.sortKey=null;state.comp.zeroOnly=false;
+    document.getElementById("zero-toggle").checked=false;
+    catbar.querySelectorAll(".cat").forEach(x=>x.classList.toggle("on",x===b));
+    renderComparador();
+  });
+  catbar.appendChild(b);
+});
+document.getElementById("zero-toggle").addEventListener("change",e=>{
+  state.comp.zeroOnly=e.target.checked;renderComparador();
+});
+
+function renderComparador(){
+  const def=BANK_DATA[state.comp.cat];
+  document.getElementById("zero-label").textContent=def.zeroFeeLabel;
+
+  // mejores valores
+  const bests={};
+  def.columns.forEach(col=>{
+    if(!col.better)return;
+    const vals=def.rows.map(r=>r[col.key]).filter(v=>v!=null);
+    if(vals.length)bests[col.key]=col.better==="low"?Math.min(...vals):Math.max(...vals);
+  });
+
+  // filas
+  let rows=def.rows.slice();
+  if(state.comp.zeroOnly)rows=rows.filter(r=>r[def.zeroFeeKey]===0);
+  if(state.comp.sortKey){
+    const k=state.comp.sortKey,dir=state.comp.sortDir;
+    rows.sort((a,b)=>{
+      const av=a[k]==null?Infinity:a[k],bv=b[k]==null?Infinity:b[k];
+      return dir==="asc"?av-bv:bv-av;
+    });
+  }
+
+  // cabecera
+  document.getElementById("comp-head").innerHTML="<tr>"+def.columns.map(col=>{
+    const align=(col.type==="text"||col.type==="tag")?"":"r";
+    const sortable=col.better?"sortable":"";
+    const sorted=state.comp.sortKey===col.key?"sorted":"";
+    const caret=col.better&&state.comp.sortKey===col.key?(state.comp.sortDir==="asc"?" ↑":" ↓"):"";
+    return `<th class="${align} ${sortable} ${sorted}" data-sort="${col.better?col.key:""}">${col.label}${caret}</th>`;
+  }).join("")+"</tr>";
+
+  document.getElementById("comp-head").querySelectorAll("[data-sort]").forEach(th=>{
+    const key=th.dataset.sort;if(!key)return;
+    th.addEventListener("click",()=>{
+      const col=def.columns.find(c=>c.key===key);
+      if(state.comp.sortKey===key)state.comp.sortDir=state.comp.sortDir==="asc"?"desc":"asc";
+      else{state.comp.sortKey=key;state.comp.sortDir=col.better==="low"?"asc":"desc";}
+      renderComparador();
+    });
+  });
+
+  // cuerpo
+  const body=document.getElementById("comp-body");
+  if(!rows.length){body.innerHTML=`<tr><td colspan="${def.columns.length}" class="empty">Ningún producto cumple ese filtro.</td></tr>`;return;}
+  body.innerHTML=rows.map(row=>"<tr>"+def.columns.map(col=>{
+    const raw=row[col.key];
+    if(col.type==="tag")return `<td><span class="tag">${raw}</span></td>`;
+    if(col.key==="producto")return `<td class="strong">${raw}</td>`;
+    const isBest=col.better&&raw!=null&&raw===bests[col.key];
+    const align=col.type==="text"?"":"r num";
+    return `<td class="${align} ${isBest?"best":""}">${fmtCell(col.type,raw)}${isBest?'<span class="best-dot" title="Mejor valor"></span>':""}</td>`;
+  }).join("")+"</tr>").join("");
+}
+
+/* ============================ Precios en vivo ============================ */
+/* Consulta el backend (/api/prices) y actualiza el precio actual de cada
+   posición. Si el backend no está o no hay API key, mantiene el precio
+   guardado (modo demo) y no rompe nada. */
+
+const REFRESH_MS = 60000; // el frontend consulta cada 60 s
+let liveActive = false;
+
+function setLiveStatus(mode, when){
+  const el=document.getElementById("live-status");
+  const txt=document.getElementById("live-text");
+  el.classList.remove("on","demo");
+  if(mode==="on"){
+    el.classList.add("on");
+    const t=when?new Date(when):new Date();
+    txt.textContent="En vivo · "+t.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+  }else{
+    el.classList.add("demo");
+    txt.textContent="Modo demo (precios manuales)";
+  }
+}
+
+async function refreshPrices(){
+  const symbols=[...new Set(state.holdings.map(h=>h.ticker).filter(Boolean))];
+  if(!symbols.length){setLiveStatus("demo");return;}
+  try{
+    const res=await fetch("/api/prices?symbols="+encodeURIComponent(symbols.join(",")));
+    if(!res.ok)throw new Error("http");
+    const data=await res.json();
+    if(data.error==="no_api_key"||!data.prices){setLiveStatus("demo");return;}
+
+    let changed=false;
+    state.holdings.forEach(h=>{
+      const p=data.prices[h.ticker];
+      if(p&&typeof p.price==="number"&&!Number.isNaN(p.price)){
+        if(h.price!==p.price){h.price=p.price;changed=true;}
+      }
+    });
+
+    const got=Object.keys(data.prices).length;
+    if(got>0){
+      liveActive=true;
+      if(changed){saveHoldings();if(state.view==="cartera")renderCartera();}
+      setLiveStatus("on",data.updatedAt);
+    }else{
+      setLiveStatus("demo");
+    }
+  }catch(err){
+    // Sin servidor (p. ej. abierto como archivo suelto): modo demo.
+    setLiveStatus("demo");
+  }
+}
+
+document.getElementById("btn-refresh").addEventListener("click",refreshPrices);
+
+/* ============================ Cuenta / sesión ============================ */
+let authMode="login";
+const overlay=document.getElementById("auth-overlay");
+
+function updateAccountUI(){
+  const btn=document.getElementById("account-btn");
+  if(state.user){ btn.textContent=state.user.email+"  ·  Salir"; }
+  else{ btn.textContent="Entrar"; }
+}
+function openAuth(){ document.getElementById("auth-error").textContent=""; overlay.hidden=false; document.getElementById("auth-email").focus(); }
+function closeAuth(){ overlay.hidden=true; }
+function setAuthMode(mode){
+  authMode=mode;
+  document.querySelectorAll(".auth-tab").forEach(t=>t.classList.toggle("on",t.dataset.auth===mode));
+  document.getElementById("auth-sub").textContent = mode==="login"
+    ? "Accede para guardar tu cartera en tu cuenta."
+    : "Crea una cuenta para guardar tu cartera de forma segura.";
+  document.getElementById("auth-submit").textContent = mode==="login" ? "Entrar" : "Crear cuenta";
+  document.getElementById("auth-pass").setAttribute("autocomplete", mode==="login"?"current-password":"new-password");
+  document.getElementById("auth-error").textContent="";
+}
+const AUTH_ERRORS={email_invalido:"El email no es válido.",password_corta:"La contraseña debe tener al menos 8 caracteres.",email_existe:"Ese email ya está registrado.",credenciales:"Email o contraseña incorrectos."};
+
+async function loadServerPortfolio(){
+  try{
+    const r=await fetch("/api/portfolio");
+    if(!r.ok)return;
+    const d=await r.json();
+    state.holdings=Array.isArray(d.holdings)?d.holdings:[];
+    renderCartera();refreshPrices();
+  }catch(e){}
+}
+async function checkAuth(){
+  try{
+    const r=await fetch("/api/me");
+    if(r.ok){ state.user=await r.json(); }
+  }catch(e){}
+  updateAccountUI();
+}
+async function submitAuth(){
+  const email=document.getElementById("auth-email").value.trim();
+  const password=document.getElementById("auth-pass").value;
+  const errEl=document.getElementById("auth-error");
+  errEl.textContent="";
+  try{
+    const r=await fetch("/api/"+authMode,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password})});
+    const d=await r.json();
+    if(!r.ok){ errEl.textContent=AUTH_ERRORS[d.error]||"No se ha podido completar. Inténtalo de nuevo."; return; }
+    state.user=d;
+    updateAccountUI();
+    closeAuth();
+    document.getElementById("auth-pass").value="";
+    await loadServerPortfolio();
+  }catch(e){
+    errEl.textContent="Sin conexión con el servidor. Abre la app con el servidor en marcha.";
+  }
+}
+async function logout(){
+  try{ await fetch("/api/logout",{method:"POST"}); }catch(e){}
+  state.user=null;
+  updateAccountUI();
+  state.holdings=loadLocalHoldings();
+  cancelEdit();renderCartera();refreshPrices();
+}
+
+document.getElementById("account-btn").addEventListener("click",()=>{ state.user?logout():openAuth(); });
+document.getElementById("auth-close").addEventListener("click",closeAuth);
+overlay.addEventListener("click",(e)=>{ if(e.target===overlay)closeAuth(); });
+document.querySelectorAll(".auth-tab").forEach(t=>t.addEventListener("click",()=>setAuthMode(t.dataset.auth)));
+document.getElementById("auth-submit").addEventListener("click",submitAuth);
+document.getElementById("auth-pass").addEventListener("keydown",(e)=>{ if(e.key==="Enter")submitAuth(); });
+
+/* ============================ Init ============================ */
+renderComparador();
+setLiveStatus("demo");
+(async()=>{
+  await checkAuth();
+  if(state.user){ await loadServerPortfolio(); }
+  else{ renderCartera(); refreshPrices(); }
+})();
+renderCartera();
+setInterval(refreshPrices, REFRESH_MS); // se actualiza solo cada 60 s
+
+</script>
+</body>
+</html>
